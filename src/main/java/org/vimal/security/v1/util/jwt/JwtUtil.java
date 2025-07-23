@@ -2,6 +2,8 @@ package org.vimal.security.v1.util.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.JsonWebEncryption;
@@ -52,7 +54,7 @@ public class JwtUtil {
                    JwtId2EncrypterDecrypter jwtId2EncrypterDecrypter,
                    RefreshTokenEncrypterDecrypter refreshTokenEncrypterDecrypter,
                    RefreshToken2EncrypterDecrypter refreshToken2EncrypterDecrypter) {
-        this.signingKey = deriveKey(jwtConfig.getSigningSecret());
+        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtConfig.getSigningSecret()));
         this.encryptionKey = deriveKey(jwtConfig.getEncryptionSecret());
         this.userModelRepo = userModelRepo;
         this.tempTokenService = tempTokenService;
