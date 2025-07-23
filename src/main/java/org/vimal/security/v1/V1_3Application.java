@@ -10,8 +10,8 @@ import static org.springframework.data.web.config.EnableSpringDataWebSupport.Pag
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
-public class V1_2Application {
+public class V1_3Application {
     public static void main(String[] args) {
-        SpringApplication.run(V1_2Application.class, args);
+        SpringApplication.run(V1_3Application.class, args);
     }
 }
