@@ -2,13 +2,10 @@ package org.vimal.security.v1.util.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
-import org.jose4j.keys.AesKey;
 import org.jose4j.lang.JoseException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -24,6 +21,8 @@ import org.vimal.security.v1.repo.UserModelRepo;
 import org.vimal.security.v1.service.TempTokenService;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -38,7 +37,7 @@ public class JwtUtil {
     private static final String REFRESH_TOKEN_PREFIX = "refreshToken:";
     private static final String REFRESH_TOKEN_MAPPING_PREFIX = "refresh_token_mapping:";
     private final SecretKey signingKey;
-    private final AesKey encryptionKey;
+    private final SecretKey encryptionKey;
     private final UserModelRepo userModelRepo;
     private final TempTokenService tempTokenService;
     private final JwtIdEncrypterDecrypter jwtIdEncrypterDecrypter;
@@ -53,14 +52,24 @@ public class JwtUtil {
                    JwtId2EncrypterDecrypter jwtId2EncrypterDecrypter,
                    RefreshTokenEncrypterDecrypter refreshTokenEncrypterDecrypter,
                    RefreshToken2EncrypterDecrypter refreshToken2EncrypterDecrypter) {
-        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtConfig.getSigningSecret()));
-        this.encryptionKey = new AesKey(Decoders.BASE64.decode(jwtConfig.getEncryptionSecret()));
+        this.signingKey = deriveKey(jwtConfig.getSigningSecret());
+        this.encryptionKey = deriveKey(jwtConfig.getEncryptionSecret());
         this.userModelRepo = userModelRepo;
         this.tempTokenService = tempTokenService;
         this.jwtIdEncrypterDecrypter = jwtIdEncrypterDecrypter;
         this.jwtId2EncrypterDecrypter = jwtId2EncrypterDecrypter;
         this.refreshTokenEncrypterDecrypter = refreshTokenEncrypterDecrypter;
         this.refreshToken2EncrypterDecrypter = refreshToken2EncrypterDecrypter;
+    }
+
+    private SecretKey deriveKey(String secret) {
+        try {
+            var sha256 = MessageDigest.getInstance("SHA-256");
+            var keyBytes = sha256.digest(secret.getBytes());
+            return new SecretKeySpec(keyBytes, "AES");
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred while deriving AES key in RandomAESUtil: " + e.getMessage(), e);
+        }
     }
 
     private String generateAndStoreJwtId(UserModel user) {
